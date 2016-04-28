@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">TickTackToe</string>
+    <string name="action_settings">Settings</string>
+    <string name="tic_tac_toe_welcome">Welcome to Tic Tac Toe. X starts.</string>
+    <string name="turn_o">O\'s turn.</string>
+    <string name="turn_x">X\'s turn.</string>
+    <string name="empty_square"> </string>
+    <string name="x_selected">X</string>
+    <string name="o_selected">O</string>
+</resources>
