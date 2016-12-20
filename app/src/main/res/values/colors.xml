@@ -5,4 +5,10 @@
     <color name="colorAccent">#FF4081</color>
     <color name="xSelected">#388E3C</color>
     <color name="oSelected">#1976D2</color>
+
+    <color name="bg_top">#00aaff</color>
+    <color name="bg_bottom">#33ff44</color>
+    <color name="hash">#333333</color>
+    <color name="crossColor">#216644</color>
+    <color name="naughtColor">#aa2211</color>
 </resources>
