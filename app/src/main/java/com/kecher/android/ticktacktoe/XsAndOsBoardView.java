@@ -5,12 +5,17 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class XsAndOsBoardView extends View {
     public static final String TAG = "PrettyView";
@@ -28,6 +33,8 @@ public class XsAndOsBoardView extends View {
     private Rect topHorizHash;
     private Rect botHorizHash;
 
+    private List<GamePiece> placedPieces;
+
     int hashLeft;
     int hashRight;
     int hashTop;
@@ -44,18 +51,23 @@ public class XsAndOsBoardView extends View {
 
     private GridCallback gridCallback;
 
+    private DisplayMetrics dm;
+
     public XsAndOsBoardView(Context context) {
         super(context);
+        dm = getContext().getResources().getDisplayMetrics();
         init();
     }
 
     public XsAndOsBoardView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        dm = getContext().getResources().getDisplayMetrics();
         init();
     }
 
     public XsAndOsBoardView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        dm = getContext().getResources().getDisplayMetrics();
         init();
     }
 
@@ -70,9 +82,13 @@ public class XsAndOsBoardView extends View {
 
         crossPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         crossPaint.setColor(res.getColor(R.color.crossColor));
+        crossPaint.setStrokeWidth(15); // TODO replace with dp
+        crossPaint.setStyle(Paint.Style.STROKE);
 
         naughtPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         naughtPaint.setColor(res.getColor(R.color.naughtColor));
+        naughtPaint.setStrokeWidth(15); // TODO replace with dp
+        naughtPaint.setStyle(Paint.Style.STROKE);
 
         vertOffset = height < width ? 0 : (height - width) / 2;
         horizOffset = width < height ? 0 : (width - height) / 2;
@@ -102,11 +118,14 @@ public class XsAndOsBoardView extends View {
                 " ts:" + topStroke +
                 " bs:" + bottomStroke);
 
-        leftVertHash = new Rect(leftStroke - 10, hashTop, leftStroke + 10, hashBottom);
-        rightVertHash = new Rect(rightStroke - 10, hashTop, rightStroke + 10, hashBottom);
-        topHorizHash = new Rect(hashLeft, topStroke - 10, hashRight, topStroke + 10);
-        botHorizHash = new Rect(hashLeft, bottomStroke - 10, hashRight, bottomStroke + 10);
+        leftVertHash = new Rect(leftStroke - pxToDp(10), hashTop, leftStroke + pxToDp(10), hashBottom);
+        rightVertHash = new Rect(rightStroke - pxToDp(10), hashTop, rightStroke + pxToDp(10), hashBottom);
+        topHorizHash = new Rect(hashLeft, topStroke - pxToDp(10), hashRight, topStroke + pxToDp(10));
+        botHorizHash = new Rect(hashLeft, bottomStroke - pxToDp(10), hashRight, bottomStroke + pxToDp(10));
 
+        if (placedPieces == null) {
+            placedPieces = new ArrayList<>();
+        }
     }
 
     public void setGridGridCallback(GridCallback gridCallback) {
@@ -154,7 +173,11 @@ public class XsAndOsBoardView extends View {
         canvas.drawRect(botHorizHash, hashPaint);
 
         // draw crosses and naughts
-        // TODO
+        for (GamePiece piece : placedPieces) {
+            canvas.drawPath(piece.getPath(), piece.getType() == GamePiece.X_PIECE ? crossPaint : naughtPaint);
+        }
+
+        // draw game win.
     }
 
     @Override
@@ -171,10 +194,40 @@ public class XsAndOsBoardView extends View {
                 int gridX = (int) (x-hashLeft)/((hashRight-hashLeft)/3);
                 int gridY = (int) (y-hashTop)/((hashBottom-hashTop)/3);
                 Log.d(TAG, "onTouchEvent: Its In!!! X:" + x + " Y:" + y);
-                gridCallback.gridClicked(gridX, gridY);
+                @GamePiece.PieceType int type = gridCallback.gridClicked(gridX, gridY);
+                placedPieces.add(new GamePiece(generatePath(gridX, gridY, type), type));
             }
         }
 
+        invalidate();
         return true;
+    }
+
+    private Path generatePath(int gridX, int gridY, @GamePiece.PieceType int type) {
+        // TODO calculate width and height of grid cells
+        int gridHeight = (hashBottom - hashTop) / 3;
+        int gridWidth = (hashRight - hashLeft) / 3;
+        // TODO calculate Left start point.
+        int leftStart = hashLeft + (gridX * gridWidth);
+        // TODO calculate top start point.
+        int topStart = hashTop + (gridY * gridHeight);
+
+        Path path = new Path();
+        if (type == GamePiece.X_PIECE) {
+            path.moveTo(leftStart + 20, topStart + 20);
+            path.lineTo(leftStart + gridWidth - 20, topStart + gridHeight - 20);
+            path.moveTo(leftStart + 20, topStart + gridHeight - 20);
+            path.lineTo(leftStart + gridWidth - 20, topStart + 20);
+        } else {
+            path.addCircle(leftStart + gridWidth/2, topStart + gridHeight/2, gridWidth/2 - 20, Path.Direction.CW);
+        }
+        path.close();
+
+        return path;
+    }
+
+    private int pxToDp(int px) {
+        Log.d(TAG, "px: " + px + " density: " + dm.density);
+        return (int) ((px/dm.density)+0.5);
     }
 }

@@ -6,6 +6,7 @@ import android.support.annotation.IntDef;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -51,19 +52,35 @@ public class MainActivity extends AppCompatActivity {
 
         XsAndOsBoardView custView = (XsAndOsBoardView) findViewById(R.id.custom_view);
         custView.setGridGridCallback(new GridCallback() {
-            public void gridClicked(int x, int y) {
+            @Override
+            public @GamePiece.PieceType int gridClicked(int x, int y) {
                 gridSelected(x, y);
+                // was x turn so not it.
+                return !isXTurn ? GamePiece.X_PIECE : GamePiece.O_PIECE;
             }
         });
     }
 
     private void gridSelected (int x, int y) {
+
         Log.d(TAG, "gridSelected: Boom!!! X:" + x + " Y:" + y);
+        updateGrid(x, y, grid, isXTurn);
     }
 
     public void buttonClicked(View v) {
         Resources res = getResources();
         Button b = (Button) v;
+        int xCoord = Integer.parseInt(((String) b.getTag()).substring(0,1));
+        int yCoord = Integer.parseInt(((String) b.getTag()).substring(2,3));
+
+        updateGrid(xCoord+1, yCoord+1, grid, isXTurn);
+
+    }
+
+    private void updateButtons(int xCoord, int yCoord, boolean turn) {
+        Resources res = getResources();
+        Button b = (Button) findViewById(getButtonId(xCoord, yCoord));
+
         if (isXTurn) {
             b.setText(getString(R.string.x_selected));
             b.setTextColor(res.getColor(R.color.xSelected));
@@ -71,9 +88,59 @@ public class MainActivity extends AppCompatActivity {
             b.setText(getString(R.string.o_selected));
             b.setTextColor(res.getColor(R.color.oSelected));
         }
-        updateGrid((String) b.getTag(), grid, isXTurn);
         isXTurn = !isXTurn;
         b.setEnabled(false);
+
+    }
+
+    private int getButtonId(int xCoord, int yCoord) {
+        switch (xCoord) {
+            case(0) :
+                switch (yCoord) {
+                    case (0):
+                        return R.id.cell_1x1;
+                    case (1):
+                        return R.id.cell_1x2;
+                    case (2):
+                        return R.id.cell_1x3;
+                    default:
+                        return -1;
+                }
+            case(1):
+                switch (yCoord) {
+                    case (0):
+                        return R.id.cell_2x1;
+                    case (1):
+                        return R.id.cell_2x2;
+                    case (2):
+                        return R.id.cell_2x3;
+                    default:
+                        return -1;
+                }
+            case(2):
+                switch (yCoord) {
+                    case (0):
+                        return R.id.cell_3x1;
+                    case (1):
+                        return R.id.cell_3x2;
+                    case (2):
+                        return R.id.cell_3x3;
+                    default:
+                        return -1;
+                }
+            default:
+                return -1;
+        }
+    }
+
+    private void updateGrid(int xCoord, int yCoord, int[][] grid, boolean turn) {
+        if (grid[xCoord][yCoord] != 0) {
+            return;
+        }
+
+        grid[xCoord][yCoord] = turn ? 1 : 2;
+
+        updateButtons(xCoord, yCoord, turn);
 
         if (xWins()) {
             updateBanner(X_WINS);
@@ -84,12 +151,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             updateBanner(isXTurn? X_TURN:O_TURN);
         }
-    }
-
-    private void updateGrid(String tag, int[][] grid, boolean turn) {
-        Integer x = Integer.parseInt(tag.substring(0,1));
-        Integer y = Integer.parseInt(tag.substring(2,3));
-        grid[x-1][y-1] = turn ? 1 : 2;
     }
 
     private void disableAllButtons() {
